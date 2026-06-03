@@ -21,7 +21,7 @@ Output:
 
 Example:
 
-    python gather_data.py ../data/index
+    python gather_data.py "../examples/Cu Ga XAS data/index"
 """
 
 import argparse

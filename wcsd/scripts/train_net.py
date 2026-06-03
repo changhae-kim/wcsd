@@ -21,7 +21,7 @@ import torch
 from torch.nn import DataParallel, MSELoss
 from torch.optim import NAdam, RAdam, Adam, AdamW, SGD
 
-from net import WeightCentricSpectrumDenoiser
+from wcsd.model.net import WeightCentricSpectrumDenoiser
 
 OPTIMIZERS = {
     "NAdam": NAdam,

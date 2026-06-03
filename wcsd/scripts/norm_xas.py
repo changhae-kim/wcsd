@@ -12,8 +12,8 @@ Example
 -------
 
     python norm_xas.py \
-        -f ../data/index \
-        -c ../data/config.json \
+        -f "../examples/Cu Ga XAS data/index" \
+        -c "../examples/Cu Ga XAS data/config.json" \
         -t muff \
         -m best.pt \
         -i 2
@@ -32,7 +32,7 @@ from torch.nn import DataParallel, MSELoss
 from larch.io.columnfile import read_ascii, write_ascii
 from larch.xafs import autobk
 
-from net import WeightCentricSpectrumDenoiser
+from wcsd.model.net import WeightCentricSpectrumDenoiser
 
 def main():
 
