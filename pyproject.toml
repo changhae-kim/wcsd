@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wcsd"
+version = "0.0.1"
+description = "Weight-Centric Spectrum Denoiser for XAS Spectra"
+readme = "README.md"
+license = "BSD-3-Clause"
+
+authors = [
+  { name = "Changhae Kim", email = "ckim6@bnl.gov" },
+  { name = "Xiaohui Qu", email = "xiaqu@bnl.gov" },
+]
+
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+
+requires-python = "==3.13.7"
+
+dependencies = [
+  "numpy==2.3.3",
+  "torch==2.8.0",
+  "xraylarch==2025.3.0",
+]
+
+[project.scripts]
+gather_data = "wcsd.scripts.gather_data:main"
+train_net = "wcsd.scripts.train_net:main"
+norm_xas = "wcsd.scripts.norm_xas:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["wcsd*"]
