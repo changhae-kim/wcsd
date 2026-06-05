@@ -1,0 +1,6 @@
+spec_type: fluorescence
+labels: "energy i0 it ir iff aux1 aux2 aux3 aux4"
+pre_edge_kws:
+  pre2: -150.0
+  pre1: -50.0
+  nnorm: 4

@@ -22,6 +22,15 @@ Example
         "../examples/Cu Ga XAS data/index" \
         -m best.pt
 
+  To normalize the raw spectra without denoising, remove the flags related to denoising:
+
+    norm_xas \
+        "../examples/Cu Ga XAS data/raw.yaml" \
+        "../examples/Cu Ga XAS data/index"
+
+  You may verify that `raw.yaml` is just `config.yaml` without the denoising flags.
+
+
 """
 
 import argparse

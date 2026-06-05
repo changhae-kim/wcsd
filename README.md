@@ -70,6 +70,7 @@ The repository includes a Cu/Ga XAS dataset together with a pretrained WCSD mode
 │   └── Cu Ga XAS data/
 │       ├── best.pt
 │       ├── config.yaml
+│       ├── raw.yaml
 │       ├── index
 │       └── */*.dat
 │
@@ -104,6 +105,7 @@ contains:
 | ------------- | --------------------------------------------- |
 | `best.pt`     | Pretrained WCSD model weights                 |
 | `config.yaml` | WCSD training and XAS normalization settings  |
+| `raw.yaml`    | XAS normalization without denoising           |
 | `index`       | Index file listing the spectra in the dataset |
 | `*/*.dat`     | Raw XAS spectra                               |
 
@@ -156,6 +158,16 @@ This command:
 4. writes normalized spectra to `flat.tgz`.
 
 The output archive contains one normalized spectrum file (`flat_*.dat`) for each input spectrum.
+
+To normalize the raw spectra without denoising, remove the flags related to denoising:
+
+```bash
+norm_xas \
+    "../examples/Cu Ga XAS data/raw.yaml" \
+    "../examples/Cu Ga XAS data/index"
+```
+
+You may verify that `raw.yaml` is just `config.yaml` without the denoising flags.
 
 ---
 
