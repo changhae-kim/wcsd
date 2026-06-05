@@ -69,7 +69,7 @@ The repository includes a Cu/Ga XAS dataset together with a pretrained WCSD mode
 ├── examples/
 │   └── Cu Ga XAS data/
 │       ├── best.pt
-│       ├── config.json
+│       ├── config.yaml
 │       ├── index
 │       └── */*.dat
 │
@@ -103,7 +103,7 @@ contains:
 | File          | Description                                   |
 | ------------- | --------------------------------------------- |
 | `best.pt`     | Pretrained WCSD model weights                 |
-| `config.json` | XAS normalization configuration               |
+| `config.yaml` | WCSD training and XAS normalization settings  |
 | `index`       | Index file listing the spectra in the dataset |
 | `*/*.dat`     | Raw XAS spectra                               |
 
@@ -143,14 +143,10 @@ To denoise and normalize the supplied spectra using the pretrained model weights
 
 ```bash
 norm_xas \
-    -f "examples/Cu Ga XAS data/index" \
-    -c "examples/Cu Ga XAS data/config.json" \
-    -t muff \
-    -m "examples/Cu Ga XAS data/best.pt" \
-    -i 2
+    "../examples/Cu Ga XAS data/config.yaml" \
+    "../examples/Cu Ga XAS data/index" \
+    -m "../examples/Cu Ga XAS data/best.pt"
 ```
-
-The options `-t muff` and `-i 2` select the fluorescence channel (`iff/i0`) used in the published model.
 
 This command:
 
@@ -183,21 +179,21 @@ iff / i0
 
 before being stored in the training archive.
 
-### Normalization Configuration
+### Training and Normalization Configuration
 
-The normalization workflows use a JSON configuration file.
+The training and normalization workflows use a YAML configuration file.
 
 Example:
 
-```json
-{
-    "labels": "energy i0 it ir iff aux1 aux2 aux3 aux4",
-    "pre_edge_kws": {
-        "pre2": -150.0,
-        "pre1": -50.0,
-        "nnorm": 4
-    }
-}
+```yaml
+io_channels: [2]
+spec_type: fluorescence
+targets: ["muff"]
+labels: "energy i0 it ir iff aux1 aux2 aux3 aux4"
+pre_edge_kws:
+  pre2: -150.0
+  pre1: -50.0
+  nnorm: 4
 ```
 
 ---
@@ -222,7 +218,7 @@ sample_102.dat
 Generate a training archive:
 
 ```bash
-gather_data /path/to/index data.npz
+gather_data /path/to/index
 ```
 
 The output archive contains one NumPy array per batch and can be used directly for training.
@@ -232,7 +228,13 @@ The output archive contains one NumPy array per batch and can be used directly f
 The published Cu/Ga dataset can be converted into a training archive with:
 
 ```bash
-gather_data "examples/Cu Ga XAS data/index" data.npz
+gather_data "examples/Cu Ga XAS data/index"
+```
+
+By default, this creates a `data.npz` archive. The name of the archive file can be changed using the `--output` flag:
+
+```bash
+gather_data "examples/Cu Ga XAS data/index" -o data.npz
 ```
 
 ---
@@ -242,7 +244,13 @@ gather_data "examples/Cu Ga XAS data/index" data.npz
 Train a model from a prepared dataset:
 
 ```bash
-train_net -f data.npz -i 2
+train_net "examples/Cu Ga XAS data/config.yaml"
+```
+
+By default, this looks for a `data.npz` archive in the current directory. You can provide an alternative file path using the `--input` flag:
+
+```bash
+train_net "examples/Cu Ga XAS data/config.yaml" -i data.npz
 ```
 
 Model checkpoints are written as:

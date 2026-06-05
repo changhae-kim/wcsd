@@ -12,17 +12,23 @@ Example
 -------
 
     python norm_xas.py \
-        -f "../examples/Cu Ga XAS data/index" \
-        -c "../examples/Cu Ga XAS data/config.json" \
-        -t muff \
-        -m best.pt \
-        -i 2
+        "../examples/Cu Ga XAS data/config.yaml" \
+        "../examples/Cu Ga XAS data/index"
+
+  By default, this looks for a `best.pt` checkpoint in the current directory. You can provide an alternative file path using the `--model` flag:
+
+    python norm_xas.py \
+        "../examples/Cu Ga XAS data/config.yaml" \
+        "../examples/Cu Ga XAS data/index" \
+        -m best.pt
+
 """
 
 import argparse
-import json
 import os
 import tarfile
+import yaml
+from dacite import from_dict
 from datetime import datetime
 
 import numpy as np
@@ -33,54 +39,54 @@ from larch.io.columnfile import read_ascii, write_ascii
 from larch.xafs import autobk
 
 from wcsd.model.net import WeightCentricSpectrumDenoiser
+from wcsd.utils.config import Config
 
 def main():
 
     # Parse arguments
     parser = argparse.ArgumentParser(
-        description="Normalize XAS spectra from an index file, optionally denoise them with WCSD, and save analysis products.",
+        description=(
+            "Normalize XAS spectra from an index file, "
+            "optionally denoise them with WCSD, "
+            "and save analysis products."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         )
-    parser.add_argument("-f", "--filepath", type=str, required=True, help="Path to the index file")
-    parser.add_argument("-c", "--config", type=str, default=None, help="Path to the config .json file")
-    parser.add_argument("-s", "--spec", type=str, default="fluor", choices=("trans", "fluor"), help="XAS spectrum type to analyze (default=fluor)")
-    parser.add_argument("-t", "--targets", type=str, nargs="+", default=["none"], help="Target channels to denoise. Choose none or N of i0, it, iff, mut, or muff (default=none)")
-    parser.add_argument("-m", "--model", type=str, default=None, help="Path to the WCSD checkpoint file (required unless targets == [\"none\"])")
-    parser.add_argument("-i", "--io_channels", type=int, nargs="+", default=None, help="Indices of channels used as both input and output (required unless targets == [\"none\"])")
-    parser.add_argument("--mid_channels", type=int, default=8, help="Number of intermediate channels (default=8)")
-    parser.add_argument("--Nt", type=int, default=3, help="Kernel size in temporal dimension (default=3)")
-    parser.add_argument("--Ns", type=int, nargs="+", default=[3, 5, 7], help="Kernel sizes in spectral dimension (default=[3, 5, 7])")
-    parser.add_argument("--num_slayers", type=int, default=1, help="Number of separable layers in each subnet (default=1)")
-    parser.add_argument("--device", type=str, default="cuda", help="Device (default=cuda)")
-
+    parser.add_argument("config", type=str, help="Path to the config file")
+    parser.add_argument("index", type=str, help="Path to the index file")
+    parser.add_argument("-m", "--model", type=str, default="best.pt",
+        help="Path to the WCSD checkpoint file (default=best.pt)")
     args = parser.parse_args()
-    print("filepath", args.filepath)
-    print("config", args.config)
-    print("spec", args.spec)
-    print("targets", args.targets)
-    print("model", args.model)
-    print("io_channels", args.io_channels)
-    print("mid_channels", args.mid_channels)
-    print("Nt", args.Nt)
-    print("Ns", args.Ns)
-    print("num_slayers", args.num_slayers)
 
-    device = torch.device(args.device)
+    print("config", args.config)
+    print("index", args.index)
+    print("model", args.model)
+
+    # Get configuration
+    with open(args.config, "rt") as f:
+        data = yaml.safe_load(f)
+    config = from_dict(data_class=Config, data=data)
+
+    print("io_channels", config.io_channels)
+    print("mid_channels", config.mid_channels)
+    print("Nt", config.Nt)
+    print("Ns_list", config.Ns_list)
+    print("num_slayers", config.num_slayers)
+    print("spec_type", config.spec_type)
+    print("denoise_channels", config.denoise_channels)
+    print("labels", config.labels)
+    print("pre_edge_kws", config.pre_edge_kws)
+
+    device = torch.device(config.device)
     print("device", device)
 
-    # Get dataset configurations
-    with open(args.config, "rt") as f:
-        config = json.load(f)
-    labels = config["labels"]
-    pre_edge_kws = config["pre_edge_kws"]
-
     # Load data
-    topdir = os.path.dirname(args.filepath)
+    topdir = os.path.dirname(args.index)
     filepaths = []
     data_list = []
     batch = []
     d_list = []
-    with open(args.filepath, "rt") as f:
+    with open(args.index, "rt") as f:
         for line in f:
             filepath = line.strip()
             if filepath.startswith("#"):
@@ -92,7 +98,7 @@ def main():
                 d_list = []
             else:
                 filepath = os.path.join(topdir, filepath)
-                dat = read_ascii(filepath, labels=labels)
+                dat = read_ascii(filepath, labels=config.labels)
                 batch.append(filepath)
                 d_list.append(dat)
         if batch != []:
@@ -100,16 +106,16 @@ def main():
             data_list.append(d_list)
 
     # Set up model
-    if args.targets[0] != "none":
-        io_channels = len(args.io_channels)
+    if config.denoise_channels is not None:
+        io_channels = len(config.io_channels)
         print("io_channels", io_channels)
         denoise_net = WeightCentricSpectrumDenoiser(
             inp_channels=io_channels,
-            mid_channels=args.mid_channels,
+            mid_channels=config.mid_channels,
             out_channels=io_channels,
-            Nt=args.Nt,
-            Ns_list=args.Ns,
-            num_slayers=args.num_slayers,
+            Nt=config.Nt,
+            Ns_list=config.Ns_list,
+            num_slayers=config.num_slayers,
         )
         with open(args.model, "rb") as f:
             d = torch.load(f, weights_only=True, map_location="cpu")
@@ -123,18 +129,18 @@ def main():
     print("Analysis started at", datetime.now())
 
     print("Denoising...")
-    pad = max(args.Ns) // 2
+    pad = max(config.Ns_list) // 2
     x0, x1 = +pad, -pad
     score = 0.0
     for b, batch in enumerate(data_list):
 
         # No denoising
-        if args.targets == ["none"]:
+        if config.denoise_channels is None:
             loss = torch.tensor([0.0])
             for dat in batch:
-                if args.spec == "trans":
+                if config.spec_type == "transmission":
                     dat.mu = np.log(dat.i0/dat.it)
-                elif args.spec == "fluor":
+                else:
                     dat.mu = dat.iff/dat.i0
 
         # Denoising
@@ -142,12 +148,12 @@ def main():
             img = []
             for n, dat in enumerate(batch):
                 img.append([])
-                for target in args.targets:
-                    if target in ["energy", "i0", "it", "iff"]:
-                        img[-1].append(getattr(dat, target))
-                    elif target == "mut":
+                for channel in config.denoise_channels:
+                    if channel in ["energy", "i0", "it", "iff"]:
+                        img[-1].append(getattr(dat, channel))
+                    elif channel == "mut":
                         img[-1].append(np.log(dat.i0/dat.it))
-                    elif target == "muff":
+                    elif channel == "muff":
                         img[-1].append(dat.iff/dat.i0)
             img = np.array(img).swapaxes(0, 1)[None, ...]
             img = torch.from_numpy(img).to(torch.float32).to(device)
@@ -172,18 +178,18 @@ def main():
                 dat.i0 = dat.i0[x0:x1]
                 dat.it = dat.it[x0:x1]
                 dat.iff = dat.iff[x0:x1]
-                for m, target in enumerate(args.targets):
-                    if target in ["energy", "i0", "it", "iff"]:
-                        setattr(dat, target, dimg[0, m, n, x0:x1])
-                if args.spec == "trans":
-                    if "mut" in args.targets:
-                        m = args.targets.index("mut")
+                for m, channel in enumerate(config.denoise_channels):
+                    if channel in ["energy", "i0", "it", "iff"]:
+                        setattr(dat, channel, dimg[0, m, n, x0:x1])
+                if config.spec_type == "transmission":
+                    if "mut" in config.denoise_channels:
+                        m = config.denoise_channels.index("mut")
                         dat.mu = dimg[0, m, n, x0:x1]
                     else:
                         dat.mu = np.log(dat.i0 / dat.it)
                 else:
-                    if "muff" in args.targets:
-                        m = args.targets.index("muff")
+                    if "muff" in config.denoise_channels:
+                        m = config.denoise_channels.index("muff")
                         dat.mu = dimg[0, m, n, x0:x1]
                     else:
                         dat.mu = dat.iff / dat.i0
@@ -196,7 +202,7 @@ def main():
     filenames = []
     for b, batch in enumerate(data_list):
         for n, dat in enumerate(batch):
-            autobk(dat.energy, dat.mu, group=dat, pre_edge_kws=pre_edge_kws)
+            autobk(dat.energy, dat.mu, group=dat, pre_edge_kws=config.pre_edge_kws)
             filename = f"flat_{b}_{n}.dat"
             write_ascii(filename, dat.energy, dat.flat, label="energy flat")
             filenames.append(filename)

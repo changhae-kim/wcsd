@@ -9,11 +9,18 @@ array is expected to have the shape (1, n_channels, n_spectra, n_points).
 Example
 -------
 
-    python train_net.py -f data.npz -i 2
+    python train_net.py "../examples/Cu Ga XAS data/config.yaml"
+
+  By default, this looks for a `data.npz` archive in the current directory. You can provide an alternative file path using the `--input` flag:
+
+    python train_net.py "../examples/Cu Ga XAS data/config.yaml" -i data.npz
+
 """
 
 import argparse
 import shutil
+import yaml
+from dacite import from_dict
 from datetime import datetime
 
 import numpy as np
@@ -22,6 +29,7 @@ from torch.nn import DataParallel, MSELoss
 from torch.optim import NAdam, RAdam, Adam, AdamW, SGD
 
 from wcsd.model.net import WeightCentricSpectrumDenoiser
+from wcsd.utils.config import Config
 
 OPTIMIZERS = {
     "NAdam": NAdam,
@@ -38,36 +46,35 @@ def main():
         description="Train the WCSD on a dataset prepared with `gather_data.py`.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("-f", "--filepath", type=str, required=True, help="Path to the .npz data file")
-    parser.add_argument("-i", "--io_channels", type=int, nargs="+", required=True, help="Indices of channels to be used as both the input and the output")
-    parser.add_argument("--mid_channels", type=int, default=8, help="Number of intermediate channels (default=8)")
-    parser.add_argument("--Nt", type=int, default=3, help="Kernel size in temporal dimension (default=3)")
-    parser.add_argument("--Ns", type=int, nargs="+",  default=[3, 5, 7], help="Kernel sizes in spectral dimension (default=[3, 5, 7])")
-    parser.add_argument("--num_slayers", type=int, default=1, help="Number of separable layers in each subnet (default=1)")
-    parser.add_argument("--device", type=str, default="cuda", help="Device (default=cuda)")
-    parser.add_argument("--opt", type=str, default="Adam", choices=sorted(OPTIMIZERS), help="Optimizer (default=Adam)")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate (default=1e-3)")
-    parser.add_argument("--epochs", type=int, default=300, help="Number of epochs (default=300)")
-
+    parser.add_argument("config", type=str, help="Path to the config file")
+    parser.add_argument("-d", "--dataset", type=str, default="data.npz",
+        help="Path to the NPZ data file (default=data.npz)")
     args = parser.parse_args()
-    print("filepath", args.filepath)
-    print("io_channels", args.io_channels)
-    print("mid_channels", args.mid_channels)
-    print("Nt", args.Nt)
-    print("Ns", args.Ns)
-    print("num_slayers", args.num_slayers)
-    print("device", args.device)
-    print("opt", args.opt)
-    print("lr", args.lr)
-    print("epochs", args.epochs)
 
-    device = torch.device(args.device)
+    print("config", args.config)
+    print("dataset", args.dataset)
+
+    # Get configuration
+    with open(args.config, "rt") as f:
+        data = yaml.safe_load(f)
+    config = from_dict(data_class=Config, data=data)
+
+    print("io_channels", config.io_channels)
+    print("mid_channels", config.mid_channels)
+    print("Nt", config.Nt)
+    print("Ns_list", config.Ns_list)
+    print("num_slayers", config.num_slayers)
+    print("optimizer", config.optimizer)
+    print("lr", config.lr)
+    print("epochs", config.epochs)
+
+    device = torch.device(config.device)
     print("device", device)
 
     # Load data
-    data = np.load(args.filepath)
+    data = np.load(args.dataset)
     data = [v for _, v in data.items()]
-    train_data = [torch.from_numpy(v[:, args.io_channels, :, :]).to(torch.float32).to(device) for v in data]
+    train_data = [torch.from_numpy(v[:, config.io_channels, :, :]).to(torch.float32).to(device) for v in data]
     del data
 
     # Standardize batches
@@ -78,15 +85,15 @@ def main():
     print(*[list(v.size()) for v in train_data])
 
     # Set up model and optimizer
-    io_channels = len(args.io_channels)
+    io_channels = len(config.io_channels)
     print("io_channels", io_channels)
     denoise_net = WeightCentricSpectrumDenoiser(
         inp_channels=io_channels,
-        mid_channels=args.mid_channels,
+        mid_channels=config.mid_channels,
         out_channels=io_channels,
-        Nt=args.Nt,
-        Ns_list=args.Ns,
-        num_slayers=args.num_slayers,
+        Nt=config.Nt,
+        Ns_list=config.Ns_list,
+        num_slayers=config.num_slayers,
     )
     if torch.cuda.device_count() > 1:
         denoise_net = DataParallel(denoise_net)
@@ -94,15 +101,15 @@ def main():
     else:
         net = denoise_net
     denoise_net.to(device)
-    optimizer = OPTIMIZERS[args.opt](denoise_net.parameters(), lr=args.lr)
+    optimizer = OPTIMIZERS[config.optimizer](denoise_net.parameters(), lr=config.lr)
     loss_func = MSELoss()
 
     print("Model training started at", datetime.now())
-    pad = max(args.Ns) // 2
+    pad = max(config.Ns_list) // 2
     x0, x1 = +pad, -pad
     best_epoch = 0
     best_score = float("inf")
-    for epoch in range(args.epochs):
+    for epoch in range(config.epochs):
 
         # Training step
         denoise_net.train()

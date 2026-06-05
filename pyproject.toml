@@ -22,7 +22,9 @@ classifiers = [
 requires-python = "==3.13.7"
 
 dependencies = [
+  "dacite==1.9.2",
   "numpy==2.3.3",
+  "PyYAML==6.0.3",
   "torch==2.8.0",
   "xraylarch==2025.3.0",
 ]

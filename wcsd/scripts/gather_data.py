@@ -22,6 +22,10 @@ Output:
 Example:
 
     python gather_data.py "../examples/Cu Ga XAS data/index"
+
+  By default, this creates a `data.npz` archive. The name of the archive file can be changed using the '--output' flag:
+
+    python gather_data.py "../examples/Cu Ga XAS data/index" -o data.npz
 """
 
 import argparse
