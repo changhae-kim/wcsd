@@ -1,6 +1,6 @@
 # Weight-Centric Spectrum Denoiser (WCSD)
 
-WCSD is a lightweight self-supervised neural network for denoising X-ray absorption spectroscopy (XAS) data. The model employs blind-spot convolutions and an ensemble of convolutional subnetworks with learnable mixing weights to suppress noise while preserving spectral features.
+WCSD is a lightweight self-supervised neural network for denoising temporal or spatial sequences of spectroscopic data such as time-resolved X-ray absorption spectroscopy (XAS). The model employs blind-spot convolutions and an ensemble of convolutional subnetworks with learnable mixing weights to suppress noise while preserving spectral features.
 
 This repository provides:
 
