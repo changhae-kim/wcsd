@@ -133,6 +133,8 @@ def main():
                     img[-1].append(np.log(dat.i0/dat.it))
                 elif channel == "muff":
                     img[-1].append(dat.iff/dat.i0)
+                else:
+                    raise ValueError("Invalid item in denoise_channels.")
         img = np.array(img).swapaxes(0, 1)[None, ...]
         img = torch.from_numpy(img).to(torch.float32).to(device)
 
@@ -165,12 +167,14 @@ def main():
                     dat.mu = dimg[0, m, n, x0:x1]
                 else:
                     dat.mu = np.log(dat.i0 / dat.it)
-            else:
+            elif config.spec_type == "fluorescence":
                 if "muff" in config.denoise_channels:
                     m = config.denoise_channels.index("muff")
                     dat.mu = dimg[0, m, n, x0:x1]
                 else:
                     dat.mu = dat.iff / dat.i0
+            else:
+                raise ValueError("Invalid spec_type.")
 
         score += loss.item()
     print("score", score)
