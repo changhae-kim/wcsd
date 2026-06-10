@@ -30,9 +30,9 @@ dependencies = [
 ]
 
 [project.scripts]
+denoise_spec = "wcsd.scripts.denoise_spec:main"
 gather_data = "wcsd.scripts.gather_data:main"
 train_net = "wcsd.scripts.train_net:main"
-norm_xas = "wcsd.scripts.norm_xas:main"
 
 [tool.setuptools]
 include-package-data = true

@@ -7,7 +7,6 @@ This repository provides:
 * tools for assembling XAS datasets,
 * training utilities for WCSD,
 * denoising workflows for XAS spectra,
-* XAFS normalization using Larch,
 * a Cu/Ga XAS benchmark dataset,
 * pretrained model weights used in the accompanying publication.
 
@@ -53,9 +52,9 @@ pip install -e .
 This provides the following command-line tools:
 
 ```text
+denoise_spec
 gather_data
 train_net
-norm_xas
 ```
 
 ---
@@ -70,7 +69,6 @@ The repository includes a Cu/Ga XAS dataset together with a pretrained WCSD mode
 │   └── Cu Ga XAS data/
 │       ├── best.pt
 │       ├── config.yaml
-│       ├── raw.yaml
 │       ├── index
 │       └── */*.dat
 │
@@ -78,9 +76,9 @@ The repository includes a Cu/Ga XAS dataset together with a pretrained WCSD mode
 │   ├── model/
 │   │   └── net.py
 │   ├── scripts/
+│   │   ├── denoise_spec.py
 │   │   ├── gather_data.py
-│   │   ├── train_net.py
-│   │   └── norm_xas.py
+│   │   └── train_net.py
 │   └── utils/
 │       └── config.py
 ├── environment.yml
@@ -104,8 +102,7 @@ contains:
 | File          | Description                                   |
 | ------------- | --------------------------------------------- |
 | `best.pt`     | Pretrained WCSD model weights                 |
-| `config.yaml` | WCSD training and XAS normalization settings  |
-| `raw.yaml`    | XAS normalization without denoising           |
+| `config.yaml` | WCSD training and XAS denoising settings      |
 | `index`       | Index file listing the spectra in the dataset |
 | `*/*.dat`     | Raw XAS spectra                               |
 
@@ -131,20 +128,20 @@ train_net
 WCSD model (.pt)
     │
     ▼
-norm_xas
+denoise_spec
     │
     ▼
-Denoised and normalized spectra
+Denoised spectra
 ```
 
 ---
 
 ## Reproducing the Published Example
 
-To denoise and normalize the supplied spectra using the pretrained model weights:
+To denoise the supplied spectra using the pretrained model weights:
 
 ```bash
-norm_xas \
+denoise_spec \
     "../examples/Cu Ga XAS data/config.yaml" \
     "../examples/Cu Ga XAS data/index" \
     -m "../examples/Cu Ga XAS data/best.pt"
@@ -154,20 +151,9 @@ This command:
 
 1. loads the spectra listed in `index`,
 2. denoises the selected channels using the pretrained WCSD model,
-3. performs XAFS normalization using Larch,
-4. writes normalized spectra to `flat.tgz`.
+3. writes denoised spectra to `denoised.tgz`.
 
-The output archive contains one normalized spectrum file (`flat_*.dat`) for each input spectrum.
-
-To normalize the raw spectra without denoising, remove the flags related to denoising:
-
-```bash
-norm_xas \
-    "../examples/Cu Ga XAS data/raw.yaml" \
-    "../examples/Cu Ga XAS data/index"
-```
-
-You may verify that `raw.yaml` is just `config.yaml` without the denoising flags.
+The output archive contains one denoised spectrum file (`denoised_*.dat`) for each input spectrum.
 
 ---
 
@@ -191,9 +177,9 @@ iff / i0
 
 before being stored in the training archive.
 
-### Training and Normalization Configuration
+### Training and Denoising Configuration
 
-The training and normalization workflows use a YAML configuration file.
+The training and denoising workflows use a YAML configuration file.
 
 Example:
 
@@ -202,10 +188,6 @@ io_channels: [2]
 spec_type: fluorescence
 targets: ["muff"]
 labels: "energy i0 it ir iff aux1 aux2 aux3 aux4"
-pre_edge_kws:
-  pre2: -150.0
-  pre1: -50.0
-  nnorm: 4
 ```
 
 ---

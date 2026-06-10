@@ -20,8 +20,7 @@ class Config:
     lr: float = 1e-3
     epochs: int = 300
 
-    # XAS Normalizer Parameters
+    # Denoiser Parameters
     spec_type: str = None
     denoise_channels: list[str] = None
     labels: str = None
-    pre_edge_kws: dict = None
