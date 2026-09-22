@@ -21,14 +21,17 @@ If you use this software or dataset in published work, please cite the accompany
 ```bibtex
 Citation information for the WCSD work will be added upon publication.
 
-@misc{lee2025machinelearningpipelinedenoising,
-      title={Machine Learning Pipeline for Denoising Low Signal-To-Noise Ratio and Out-of-Distribution Transmission Electron Microscopy Datasets},
-      author={Brian Lee and Meng Li and Judith C Yang and Dmitri N Zakharov and Xiaohui Qu},
-      year={2025},
-      eprint={2512.04045},
-      archivePrefix={arXiv},
-      primaryClass={cond-mat.mtrl-sci},
-      url={https://arxiv.org/abs/2512.04045},
+@article{
+    Lee2026,
+    author={Lee, Brian and Li, Meng and Yang, Judith C. and Zakharov, Dmitri N. and Qu, Xiaohui},
+    title={Machine learning pipeline for denoising low signal-to-noise ratio and out-of-distribution transmission electron microscopy datasets},
+    journal={npj Computational Materials},
+    year={2026},
+    month={Jun},
+    day={27},
+    issn={2057-3960},
+    doi={10.1038/s41524-026-02193-9},
+    url={https://doi.org/10.1038/s41524-026-02193-9},
 }
 ```
 
