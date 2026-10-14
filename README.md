@@ -19,7 +19,13 @@ WCSD adapts the Weight-Centric Image/Video Denoiser (WCID/WCVD) architecture to 
 If you use this software or dataset in published work, please cite the accompanying publication. Users of the weight-centric denoising methods should also cite the original WCID/WCVD publication.
 
 ```bibtex
-Citation information for the WCSD work will be added upon publication.
+@unpublished{
+	Fornero2026,
+	author={Fornero, Esteban L. and Kim, Changhae Andrew and Boscoboinik, J. Anibal and Dalotto, Florencia and Qu, Xiaohui and Chen, Xiaobo and Bjorklund, Jennifer and Stavitski, Eli and Yang, Judith and Mason, Sara E. and Ganduglia-Pirovano, M. Ver{\'o}nica and Bonivardi, Adrian L. and Lustemberg, Pablo and Stacchiola, Dario},
+	title={Direct Propylene Epoxidation on Partially Oxidized Copper Centers Stabilized within a Mixed Oxide},
+	note={Manuscript in preparation},
+	year={2026},
+}
 
 @article{
     Lee2026,
